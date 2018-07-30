@@ -13,7 +13,10 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -75,17 +78,17 @@ public class DatabaseHandler extends SQLiteOpenHelper{
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String CREATE_CONTACTS_TABLE = "create table if not exists " + TABLE_CARS   + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT, " + FIELD_DRIVER_ID + " INTEGER)";
-        db.execSQL(CREATE_CONTACTS_TABLE);
-        CREATE_CONTACTS_TABLE = "create table if not exists " + TABLE_DRIVERS       + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
-        db.execSQL(CREATE_CONTACTS_TABLE);
-        CREATE_CONTACTS_TABLE = "create table if not exists " + TABLE_FIELDS        + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
-        db.execSQL(CREATE_CONTACTS_TABLE);
-        CREATE_CONTACTS_TABLE = "create table if not exists " + TABLE_WAREHOUSES    + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
-        db.execSQL(CREATE_CONTACTS_TABLE);
-        CREATE_CONTACTS_TABLE = "create table if not exists " + TABLE_CROPS         + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
-        db.execSQL(CREATE_CONTACTS_TABLE);
-        CREATE_CONTACTS_TABLE = "create table if not exists " + TABLE_DOCS          + "(" + FIELD_ID + " INTEGER PRIMARY KEY, "
+        String CREATE_TABLE = "create table if not exists " + TABLE_CARS   + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT, " + FIELD_DRIVER_ID + " INTEGER)";
+        db.execSQL(CREATE_TABLE);
+        CREATE_TABLE = "create table if not exists " + TABLE_DRIVERS       + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
+        db.execSQL(CREATE_TABLE);
+        CREATE_TABLE = "create table if not exists " + TABLE_FIELDS        + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
+        db.execSQL(CREATE_TABLE);
+        CREATE_TABLE = "create table if not exists " + TABLE_WAREHOUSES    + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
+        db.execSQL(CREATE_TABLE);
+        CREATE_TABLE = "create table if not exists " + TABLE_CROPS         + "(" + FIELD_ID + " INTEGER PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
+        db.execSQL(CREATE_TABLE);
+        CREATE_TABLE = "create table if not exists " + TABLE_DOCS          + "(" + FIELD_ID + " INTEGER PRIMARY KEY, "
                                                                                     + FIELD_TITLE + " TEXT,"
                                                                                     + FIELD_DATE + " DATE, "
                                                                                     + FIELD_CAR_ID + " INTEGER, "
@@ -94,10 +97,10 @@ public class DatabaseHandler extends SQLiteOpenHelper{
                                                                                     + FIELD_FIELD_ID + " INTEGER, "
                                                                                     + FIELD_WAREHOUSE_ID + " INTEGER, "
                                                                                     + FIELD_CREATED_BY + " TEXT)";
-        db.execSQL(CREATE_CONTACTS_TABLE);
+        db.execSQL(CREATE_TABLE);
     }
 
-    public void addContact(Document document) {
+    public void addDocument(Document document) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(FIELD_ID, document.getCar_id());
@@ -130,20 +133,21 @@ public class DatabaseHandler extends SQLiteOpenHelper{
         return document;
     }
 
-    public List<Contact> getAllContacts() {
-        List<Contact> contactList = new ArrayList<Contact>();
-        String selectQuery = "SELECT  * FROM " + TABLE_CONTACTS;
+    public List<Document> getAllDocs() {
+        List<Document> docsList = new ArrayList<Document>();
+        String selectQuery = "SELECT  * FROM " + TABLE_DOCS;
 
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
 
         if (cursor.moveToFirst()) {
             do {
-                Contact contact = new Contact();
-                contact.setID(Integer.parseInt(cursor.getString(0)));
-                contact.setName(cursor.getString(1));
-                contact.setPhoneNumber(cursor.getString(2));
-                contactList.add(contact);
+                Document doc = new Document();
+                doc.setId(Integer.parseInt(cursor.getString(0)));
+                doc.setTitle(cursor.getString(1));
+                doc.setDriver_id(Integer.parseInt(cursor.getString(2)));
+                doc.setDate(Date.from());
+                docsList.add(doc);
             } while (cursor.moveToNext());
         }
 
@@ -252,5 +256,8 @@ class Document {
         this.id = id;
         this.title = title;
         this.date = date;
+    }
+
+    public Document() {
     }
 }
