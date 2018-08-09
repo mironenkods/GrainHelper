@@ -87,6 +87,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
         intent.putExtra("login_suc", login_suc);
         intent.putExtra("login", mEmailView.getText().toString());
+      intent.putExtra("password", mPasswordView.getText().toString());
         startActivity(intent);
     }
 
@@ -186,13 +187,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         boolean cancel = false;
         View focusView = null;
-
-        // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
-            mPasswordView.setError(getString(R.string.error_invalid_password));
-            focusView = mPasswordView;
-            cancel = true;
-        }
 
         // Check for a valid email address.
        /* if (TextUtils.isEmpty(email)) {

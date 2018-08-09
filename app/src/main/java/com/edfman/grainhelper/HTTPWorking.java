@@ -79,11 +79,11 @@ public class HTTPWorking {
             Log.e("IOException", e.toString());
 
         }
-        finally {
-            if (urlConnection != null) {
-                urlConnection.disconnect();
-            }
-        }
+//        finally {
+//            if (urlConnection != null) {
+//                urlConnection.disconnect();
+//            }
+//        }
 
         // Создаем BufferedReader дял чтения ответа
         BufferedReader in=null;
@@ -96,12 +96,13 @@ public class HTTPWorking {
 //        } catch(IOException e){
 //            Log.e("IO exception", e.toString());
 //        }
+        StringBuffer buff = new StringBuffer("");
         request_answer req = null;
         if (in_stream != null) {
 
             try {
                 in = new BufferedReader(new InputStreamReader(in_stream));
-                StringBuffer buff = new StringBuffer("");
+
                 String line = "";
                 while ((line = in.readLine()) != null) {
                     buff.append(line);
@@ -123,9 +124,11 @@ public class HTTPWorking {
 
         // возвращаем ответ в виде строки текста
         try {
-            req = new request_answer(urlConnection.getResponseCode(), urlConnection.getResponseMessage());
+            req = new request_answer(urlConnection.getResponseCode(), buff.toString());
+            urlConnection.disconnect();
         } catch (IOException e) {
             Log.e("IO exception", e.toString());
+            urlConnection.disconnect();
         }
         return req;
     }
