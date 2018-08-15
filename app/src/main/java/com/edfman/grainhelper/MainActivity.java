@@ -21,12 +21,17 @@ import android.text.format.DateUtils;
 import android.view.View;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.widget.DatePicker;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
 import com.google.gson.Gson;
 
 import java.io.Console;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -43,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     DatabaseHandler db;
 
     TextView currentDateTime;
+    long currentDate;
 
     Calendar dateAndTime = Calendar.getInstance();
 
@@ -53,6 +59,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String TABLE_CROPS = "crops";
     private static final String TABLE_DOCS = "docs";
 
+    // имена атрибутов для Map
+    final String ATTRIBUTE_NAME_id = "_id";
+    final String ATTRIBUTE_NAME_car = "car";
+    final String ATTRIBUTE_NAME_driver = "driver";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,14 +99,24 @@ public class MainActivity extends AppCompatActivity {
         //need to fill db from web-service
         if (login_successful) {
             renewRefs();
+            db.getRefElements(TABLE_CARS);
             //get docs
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
                 TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
                 String deviceId = telephonyManager.getDeviceId();
-                System.out.print("EMAI" + deviceId);
+                System.out.println("EMAI" + deviceId);
+                db.clearDocs();
+                getDocs(deviceId);
             }
 
         }
+        // вывод данных в List
+        ListView userList = (ListView)findViewById(R.id.lvSimple);
+        String[] headers = new String[] {ATTRIBUTE_NAME_car, ATTRIBUTE_NAME_driver, ATTRIBUTE_NAME_id};
+        Cursor userCursor = db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60));
+        SimpleCursorAdapter userAdapter = new SimpleCursorAdapter(this, R.layout.item,
+                userCursor, headers, new int[]{R.id.tvCar, R.id.tvDriver, R.id.tvInvoiceId}, 0);
+        userList.setAdapter(userAdapter);
     }
 
     // установка начальных даты и времени
@@ -114,6 +134,18 @@ public class MainActivity extends AppCompatActivity {
             dateAndTime.set(Calendar.MONTH, monthOfYear);
             dateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
             setInitialDateTime();
+            try {
+                String str_date="" + year + monthOfYear + dayOfMonth;
+                DateFormat formatter ;
+                Date date ;
+                formatter = new SimpleDateFormat("yyyymmdd");
+                date = (Date)formatter.parse(str_date);
+                currentDate=date.getTime();
+                System.out.println(currentDate);
+            }
+            catch (ParseException e){
+                System.out.println("Exception :"+e);
+            }
         }
     };
 
@@ -127,6 +159,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void renewRefs(){
+            //clear all ref tables
+            db.clearAllRefs();
             request = new HTTPWorking().callWebService("http://192.168.225.5/agro_ves/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "", "GET");
             if (request.code == 200) {
                 Gson gson = new Gson();
@@ -141,12 +175,12 @@ public class MainActivity extends AppCompatActivity {
             }
     }
 
-    protected void getDocs(String date, String deviceId){
-        request = new HTTPWorking().callWebService("http://192.168.225.5/agro_ves/hs/Grain/main/get?date=" + date + "&emei=" + deviceId + "", "PUT");
+    protected void getDocs(String deviceId){
+        request = new HTTPWorking().callWebService("http://192.168.225.5/agro_ves/hs/Grain/GetInvoices/get?&emei=" + deviceId + "", "GET");
         if (request.code == 200) {
             Gson gson = new Gson();
             DocsResult result = gson.fromJson(request.Body, DocsResult.class);
-            for (Document doc : result.result_list) {
+            for (Document doc : result.invoices) {
                 db.addDocument(doc);
             }
         }
@@ -165,6 +199,7 @@ class DatabaseHandler extends SQLiteOpenHelper{
     private static final String TABLE_CROPS         = "crops";
     private static final String TABLE_DOCS          = "docs";
     private static final String FIELD_ID            = "id";
+    private static final String FIELD_1C_ID         = "id_1c";
     private static final String FIELD_TITLE         = "title";
     private static final String FIELD_DRIVER_ID     = "driver_id";
     private static final String FIELD_DATE          = "date";
@@ -181,17 +216,17 @@ class DatabaseHandler extends SQLiteOpenHelper{
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String CREATE_TABLE = "create table if not exists " + TABLE_CARS   + "(" + FIELD_ID + " TEXT PRIMARY KEY, " + FIELD_TITLE + " TEXT, " + FIELD_DRIVER_ID + " TEXT)";
+        String CREATE_TABLE = "create table if not exists " + TABLE_CARS   + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + FIELD_1C_ID + " TEXT," + FIELD_TITLE + " TEXT, " + FIELD_DRIVER_ID + " TEXT)";
         db.execSQL(CREATE_TABLE);
-        CREATE_TABLE = "create table if not exists " + TABLE_DRIVERS       + "(" + FIELD_ID + " TEXT PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
+        CREATE_TABLE = "create table if not exists " + TABLE_DRIVERS       + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + FIELD_1C_ID + " TEXT," + FIELD_TITLE + " TEXT)";
         db.execSQL(CREATE_TABLE);
-        CREATE_TABLE = "create table if not exists " + TABLE_FIELDS        + "(" + FIELD_ID + " TEXT PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
+        CREATE_TABLE = "create table if not exists " + TABLE_FIELDS        + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + FIELD_1C_ID + " TEXT," + FIELD_TITLE + " TEXT)";
         db.execSQL(CREATE_TABLE);
-        CREATE_TABLE = "create table if not exists " + TABLE_WAREHOUSES    + "(" + FIELD_ID + " TEXT PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
+        CREATE_TABLE = "create table if not exists " + TABLE_WAREHOUSES    + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + FIELD_1C_ID + " TEXT," + FIELD_TITLE + " TEXT)";
         db.execSQL(CREATE_TABLE);
-        CREATE_TABLE = "create table if not exists " + TABLE_CROPS         + "(" + FIELD_ID + " TEXT PRIMARY KEY, " + FIELD_TITLE + " TEXT)";
+        CREATE_TABLE = "create table if not exists " + TABLE_CROPS         + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + FIELD_1C_ID + " TEXT," + FIELD_TITLE + " TEXT)";
         db.execSQL(CREATE_TABLE);
-        CREATE_TABLE = "create table if not exists " + TABLE_DOCS          + "(" + FIELD_ID + " TEXT PRIMARY KEY, "
+        CREATE_TABLE = "create table if not exists " + TABLE_DOCS          + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                                                                                     + FIELD_TITLE + " TEXT,"
                                                                                     + FIELD_DATE + " LONG, "
                                                                                     + FIELD_CAR_ID + " TEXT, "
@@ -211,15 +246,13 @@ class DatabaseHandler extends SQLiteOpenHelper{
     public void addDocument(Document document) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(FIELD_ID, document.getCar_id());
-        values.put(FIELD_TITLE, document.getTitle());
         values.put(FIELD_DATE, document.getDate());
         values.put(FIELD_CAR_ID, document.getCar_id());
-        values.put(FIELD_DRIVER_ID, document.getCar_id());
-        values.put(FIELD_CROP_ID, document.getCar_id());
-        values.put(FIELD_FIELD_ID, document.getCar_id());
-        values.put(FIELD_WAREHOUSE_ID, document.getCar_id());
-        values.put(FIELD_CREATED_BY, document.getCar_id());
+        values.put(FIELD_DRIVER_ID, document.getDriver_id());
+        values.put(FIELD_CROP_ID, document.getCrop_id());
+        values.put(FIELD_FIELD_ID, document.getField_id());
+        values.put(FIELD_WAREHOUSE_ID, document.getWarehouse_id());
+        values.put(FIELD_CREATED_BY, document.getCreated_by());
 
         db.insert(TABLE_DOCS, null, values);
         db.close();
@@ -228,7 +261,7 @@ class DatabaseHandler extends SQLiteOpenHelper{
     public void addRef(TypicalRef ref, String table_name) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(FIELD_ID, ref.getId());
+        values.put(FIELD_1C_ID, ref.getId_1c());
         values.put(FIELD_TITLE, ref.getTitle());
         if(ref.getType() == RefType.car) values.put(FIELD_DRIVER_ID, ref.getDriver_id());
 
@@ -257,13 +290,12 @@ class DatabaseHandler extends SQLiteOpenHelper{
         //int id, String title, int driver_id, long date, int car_id, int crop_id, int field_id, int warehouse_id, String created_by
         Document document = new Document(
                 cursor.getInt(0),
-                cursor.getString(1),
-                cursor.getInt(2),
+                cursor.getString(2),
                 cursor.getLong(3),
-                cursor.getInt(4),
-                cursor.getInt(5),
-                cursor.getInt(6),
-                cursor.getInt(7),
+                cursor.getString(4),
+                cursor.getString(5),
+                cursor.getString(6),
+                cursor.getString(7),
                 cursor.getString(8));
 
         return document;
@@ -280,19 +312,45 @@ class DatabaseHandler extends SQLiteOpenHelper{
             do {
                 Document doc = new Document(
                         cursor.getInt(0),
-                        cursor.getString(1),
-                        cursor.getInt(2),
+                        cursor.getString(2),
                         cursor.getLong(3),
-                        cursor.getInt(4),
-                        cursor.getInt(5),
-                        cursor.getInt(6),
-                        cursor.getInt(7),
+                        cursor.getString(4),
+                        cursor.getString(5),
+                        cursor.getString(6),
+                        cursor.getString(7),
                         cursor.getString(8));
                 docsList.add(doc);
             } while (cursor.moveToNext());
         }
 
         return docsList;
+    }
+
+    public List<TypicalRef> getRefElements(String table_name) {
+        List<TypicalRef> refList = new ArrayList<TypicalRef>();
+        String selectQuery = "SELECT  * FROM " + table_name;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+        RefType curr_type = RefType.car;
+        if(table_name==TABLE_CARS) curr_type = RefType.car;
+        if(table_name==TABLE_CROPS) curr_type = RefType.crop;
+        if(table_name==TABLE_DRIVERS) curr_type = RefType.driver;
+        if(table_name==TABLE_FIELDS) curr_type = RefType.field;
+        if(table_name==TABLE_WAREHOUSES) curr_type = RefType.warehouse;
+
+        if (cursor.moveToFirst()) {
+            do {
+                TypicalRef ref = new TypicalRef(
+                        cursor.getString(1),
+                        cursor.getString(2),
+                        cursor.getString(3),
+                        curr_type);
+                refList.add(ref);
+            } while (cursor.moveToNext());
+        }
+
+        return refList;
     }
 
     public List<Document> getDocsByDate(String start_date, String finish_date) {
@@ -307,13 +365,12 @@ class DatabaseHandler extends SQLiteOpenHelper{
             do {
                 Document doc = new Document(
                         cursor.getInt(0),
-                        cursor.getString(1),
-                        cursor.getInt(2),
+                        cursor.getString(2),
                         cursor.getLong(3),
-                        cursor.getInt(4),
-                        cursor.getInt(5),
-                        cursor.getInt(6),
-                        cursor.getInt(7),
+                        cursor.getString(4),
+                        cursor.getString(5),
+                        cursor.getString(6),
+                        cursor.getString(7),
                         cursor.getString(8));
                 docsList.add(doc);
             } while (cursor.moveToNext());
@@ -322,29 +379,56 @@ class DatabaseHandler extends SQLiteOpenHelper{
         return docsList;
     }
 
+    public Cursor getDocsByDate_Cursor(String start_date, String finish_date) {
+        List<Document> docsList = new ArrayList<Document>();
+        String selectQuery = "select\n" +
+                "docs.id AS _id,\n" +
+                "docs.driver_id AS driver,\n" +
+                "cars.title AS car\n" +
+                "from\n" +
+                "docs inner join cars ON\n" +
+                "cars.id_1c = docs.car_id\n" +
+                "where docs.date>= ? and docs.date>= ?";
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.rawQuery(selectQuery, new String[] {start_date, finish_date});
+    }
+
+    public void clearAllRefs(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_CARS, null, null);
+        db.delete(TABLE_CROPS, null, null);
+        db.delete(TABLE_DRIVERS, null, null);
+        db.delete(TABLE_FIELDS, null, null);
+        db.delete(TABLE_WAREHOUSES, null, null);
+    }
+
+    public void clearDocs(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_DOCS, null, null);
+    }
 }
 
 class Document {
 
     int id;
-    String title;
-    int driver_id;
+//    String title;
+    String driver_id;
     long date;
-    int car_id;
-    int crop_id;
-    int field_id;
-    int warehouse_id;
+    String car_id;
+    String crop_id;
+    String field_id;
+    String warehouse_id;
     String created_by;
 
     public void setId(int id) {
         this.id = id;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+//    public void setTitle(String title) {
+//        this.title = title;
+//    }
 
-    public void setDriver_id(int driver_id) {
+    public void setdriver_id(String driver_id) {
         this.driver_id = driver_id;
     }
 
@@ -352,19 +436,19 @@ class Document {
         this.date = date;
     }
 
-    public void setCar_id(int car_id) {
+    public void setCar_id(String car_id) {
         this.car_id = car_id;
     }
 
-    public void setCrop_id(int crop_id) {
+    public void setCrop_id(String crop_id) {
         this.crop_id = crop_id;
     }
 
-    public void setField_id(int field_id) {
+    public void setField_id(String field_id) {
         this.field_id = field_id;
     }
 
-    public void setWarehouse_id(int warehouse_id) {
+    public void setWarehouse_id(String warehouse_id) {
         this.warehouse_id = warehouse_id;
     }
 
@@ -376,11 +460,11 @@ class Document {
         return id;
     }
 
-    public String getTitle() {
-        return title;
-    }
+//    public String getTitle() {
+//        return title;
+//    }
 
-    public int getDriver_id() {
+    public String getDriver_id() {
         return driver_id;
     }
 
@@ -388,19 +472,19 @@ class Document {
         return date;
     }
 
-    public int getCar_id() {
+    public String getCar_id() {
         return car_id;
     }
 
-    public int getCrop_id() {
+    public String getCrop_id() {
         return crop_id;
     }
 
-    public int getField_id() {
+    public String getField_id() {
         return field_id;
     }
 
-    public int getWarehouse_id() {
+    public String getWarehouse_id() {
         return warehouse_id;
     }
 
@@ -408,9 +492,9 @@ class Document {
         return created_by;
     }
 
-    public Document(int id, String title, int driver_id, long date, int car_id, int crop_id, int field_id, int warehouse_id, String created_by) {
+    public Document(int id, String driver_id, long date, String car_id, String crop_id, String field_id, String warehouse_id, String created_by) {
         this.id = id;
-        this.title = title;
+//        this.title = title;
         this.driver_id = driver_id;
         this.date = date;
         this.car_id = car_id;
@@ -419,9 +503,8 @@ class Document {
         this.warehouse_id = warehouse_id;
         this.created_by = created_by;
     }
-    public Document(int id, String title, long date) {
+    public Document(int id, long date) {
         this.id = id;
-        this.title = title;
         this.date = date;
     }
 
@@ -432,24 +515,24 @@ class Document {
 enum RefType{car, driver, field, warehouse, crop}
 
 class TypicalRef{
-    String id;
+    String id_1c;
     String title;
     String driver_id;
     RefType type;
 
-    public TypicalRef(String id, String title, String driver_id, RefType type) {
-        this.id = id;
+    public TypicalRef(String id_1c, String title, String driver_id, RefType type) {
+        this.id_1c = id_1c;
         this.title = title;
         this.driver_id = driver_id;
         this.type = type;
     }
 
-    public String getId() {
-        return id;
+    public String getId_1c() {
+        return id_1c;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setId_1c(String id_1c) {
+        this.id_1c = id_1c;
     }
 
     public String getTitle() {
@@ -482,5 +565,5 @@ class Result{
 }
 
 class DocsResult{
-    List<Document> result_list;
+    List<Document> invoices;
 }
