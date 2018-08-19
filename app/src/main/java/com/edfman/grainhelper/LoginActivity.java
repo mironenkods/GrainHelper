@@ -53,13 +53,15 @@ import static android.Manifest.permission.READ_CONTACTS;
 /**
  * A login screen that offers login via email/password.
  */
+
+
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
     /**
      * Id to identity READ_CONTACTS permission request.
      */
     private static final int REQUEST_READ_CONTACTS = 0;
-
+    private static final String server_Ip = "http://178.92.47.54:8085";
     /**
      * A dummy authentication store containing known user names and passwords.
      * TODO: remove after connecting to a real authentication system.
@@ -330,7 +332,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 // Simulate network access.
                 //Thread.sleep(2000);
 
-                request = new HTTPWorking().callWebService("http://192.168.225.5/agro_ves/hs/Grain/main/login?login=" + mEmail + "&password=" + mPassword + "", "GET");
+                request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/main/login?login=" + mEmail + "&password=" + mPassword + "", "GET");
 
             if (request!=null && request.code == 200){
                 login_suc = true;

@@ -15,4 +15,13 @@
     </string>
     <string name="Login">Login</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_item">ItemActivity</string>
+    <string name="rCar">Car</string>
+    <string name="rId">Id</string>
+    <string name="rDate">Date</string>
+    <string name="rDriver">Driver</string>
+    <string name="rField">Field</string>
+    <string name="rCrop">Crop</string>
+    <string name="rWarehouse">Warehouse</string>
+    <string name="rCreated">Created By</string>
 </resources>

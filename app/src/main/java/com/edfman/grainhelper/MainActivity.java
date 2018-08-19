@@ -2,6 +2,7 @@ package com.edfman.grainhelper;
 
 import android.Manifest;
 import android.app.DatePickerDialog;
+import android.app.ListActivity;
 import android.app.TimePickerDialog;
 import android.content.ContentValues;
 import android.content.Context;
@@ -39,13 +40,14 @@ import java.util.Date;
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends ListActivity {
 
     boolean login_successful;
     String lName;
     String lpass;
     private HTTPWorking.request_answer request;
     DatabaseHandler db;
+    private static final String server_Ip = "http://178.92.47.54:8085";
 
     TextView currentDateTime;
     long currentDate;
@@ -63,6 +65,39 @@ public class MainActivity extends AppCompatActivity {
     final String ATTRIBUTE_NAME_id = "_id";
     final String ATTRIBUTE_NAME_car = "car";
     final String ATTRIBUTE_NAME_driver = "driver";
+
+    SimpleCursorAdapter userAdapter;
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+        Intent intent = new Intent(MainActivity.this, ItemActivity.class);
+        Document doc = db.getStringDoc(position);
+
+        intent.putExtra("readOnly", true);
+        intent.putExtra("id", doc.getId());
+        intent.putExtra("car", doc.getCar_id());
+        intent.putExtra("created_by", doc.getCreated_by());
+        intent.putExtra("crop", doc.getCrop_id());
+        // or you already have long value of date, use this instead of milliseconds variable.
+        intent.putExtra("date", convertLongDate(doc.getDate(), "dd/MM/yyyy"));
+        intent.putExtra("driver", doc.getDriver_id());
+        intent.putExtra("field", doc.getField_id());
+        intent.putExtra("warehouse", doc.getWarehouse_id());
+
+        startActivity(intent);
+    }
+
+    public static String convertLongDate(long milliSeconds, String dateFormat)
+    {
+        // Create a DateFormatter object for displaying date in specified format.
+        SimpleDateFormat formatter = new SimpleDateFormat(dateFormat);
+
+        // Create a calendar object that will convert the date and time value in milliseconds to date.
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(milliSeconds);
+        return formatter.format(calendar.getTime());
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,8 +117,10 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent intent = new Intent(MainActivity.this, ItemActivity.class);
+
+                intent.putExtra("readOnly", false);
+                startActivity(intent);
             }
         });
 
@@ -111,10 +148,10 @@ public class MainActivity extends AppCompatActivity {
 
         }
         // вывод данных в List
-        ListView userList = (ListView)findViewById(R.id.lvSimple);
+        ListView userList = getListView();
         String[] headers = new String[] {ATTRIBUTE_NAME_car, ATTRIBUTE_NAME_driver, ATTRIBUTE_NAME_id};
         Cursor userCursor = db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60));
-        SimpleCursorAdapter userAdapter = new SimpleCursorAdapter(this, R.layout.item,
+        userAdapter = new SimpleCursorAdapter(this, R.layout.item,
                 userCursor, headers, new int[]{R.id.tvCar, R.id.tvDriver, R.id.tvInvoiceId}, 0);
         userList.setAdapter(userAdapter);
     }
@@ -142,6 +179,8 @@ public class MainActivity extends AppCompatActivity {
                 date = (Date)formatter.parse(str_date);
                 currentDate=date.getTime();
                 System.out.println(currentDate);
+                Cursor oldCursor = userAdapter.swapCursor(db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60)));
+                if (oldCursor != null) oldCursor.close();
             }
             catch (ParseException e){
                 System.out.println("Exception :"+e);
@@ -161,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
     protected void renewRefs(){
             //clear all ref tables
             db.clearAllRefs();
-            request = new HTTPWorking().callWebService("http://192.168.225.5/agro_ves/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "", "GET");
+            request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "", "GET");
             if (request.code == 200) {
                 Gson gson = new Gson();
                 Result result = gson.fromJson(request.Body, Result.class);
@@ -176,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void getDocs(String deviceId){
-        request = new HTTPWorking().callWebService("http://192.168.225.5/agro_ves/hs/Grain/GetInvoices/get?&emei=" + deviceId + "", "GET");
+        request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/GetInvoices/get?&emei=" + deviceId + "", "GET");
         if (request.code == 200) {
             Gson gson = new Gson();
             DocsResult result = gson.fromJson(request.Body, DocsResult.class);
@@ -297,6 +336,40 @@ class DatabaseHandler extends SQLiteOpenHelper{
                 cursor.getString(6),
                 cursor.getString(7),
                 cursor.getString(8));
+
+        return document;
+    }
+
+    public Document getStringDoc(int id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("select\n" +
+                "docs.id,\n" +
+                "docs.driver_id as driver,\n" +
+                "docs.date,\n" +
+                "cars.title as car,\n" +
+                "crops.title as crop,\n" +
+                "fields.title as field,\n" +
+                "warehouses.title as warehouse,\n" +
+                "docs.created_by\n" +
+                "from docs as docs inner join cars as cars on docs.car_id = cars.id_1c " +
+                "inner join fields as fields on docs.field_id = fields.id_1c left join crops as crops on docs.crop_id = crops.id_1c " +
+                "left join warehouses as  warehouses on docs.warehouse_id = warehouses.id_1c\n" +
+                "where docs.id>= ?", new String[] {String.valueOf(id)}, null);
+
+        if (cursor != null){
+            cursor.moveToFirst();
+        }
+       // int id, String driver_id, long date, String car_id, String crop_id, String field_id, String warehouse_id, String created_by) {
+            Document document = new Document(
+                cursor.getInt(0),
+                cursor.getString(1),
+                cursor.getLong(2),
+                cursor.getString(3),
+                cursor.getString(4),
+                cursor.getString(5),
+                cursor.getString(6),
+                cursor.getString(7));
 
         return document;
     }

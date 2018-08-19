@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".ItemActivity"
+    tools:showIn="@layout/activity_item">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvIdLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="false"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:text="@string/rId" />
+
+        <TextView
+            android:id="@+id/tvId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/tv_left_padding"
+            android:textSize="@dimen/rMainFieldSize"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvDateLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="false"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:text="@string/rDate" />
+
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/tv_left_padding"
+            android:textSize="@dimen/rMainFieldSize"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCarLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="false"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:text="@string/rCar" />
+
+        <EditText
+            android:id="@+id/tvcar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/tv_left_padding"
+            android:textSize="@dimen/rMainFieldSize"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvDriverLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="false"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:text="@string/rDriver" />
+
+        <EditText
+            android:id="@+id/tvDriver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/tv_left_padding"
+            android:textSize="@dimen/rMainFieldSize"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvFieldLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="false"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:text="@string/rField" />
+
+        <EditText
+            android:id="@+id/tvField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/tv_left_padding"
+            android:textSize="@dimen/rMainFieldSize"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCropLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="false"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:text="@string/rCrop" />
+
+        <EditText
+            android:id="@+id/tvCrop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/tv_left_padding"
+            android:textSize="@dimen/rMainFieldSize"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvWarehouseLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="false"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:text="@string/rWarehouse" />
+
+        <EditText
+            android:id="@+id/tvWarehouse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/tv_left_padding"
+            android:textSize="@dimen/rMainFieldSize"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCreatedLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="false"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:text="@string/rCreated" />
+
+        <TextView
+            android:id="@+id/tvCreatedBy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/tv_left_padding"
+            android:textSize="@dimen/rMainFieldSize"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</android.support.constraint.ConstraintLayout>
