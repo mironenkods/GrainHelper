@@ -39,7 +39,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-
 public class MainActivity extends ListActivity {
 
     boolean login_successful;
@@ -158,10 +157,15 @@ public class MainActivity extends ListActivity {
 
     // установка начальных даты и времени
     private void setInitialDateTime() {
-
         currentDateTime.setText(DateUtils.formatDateTime(this,
                 dateAndTime.getTimeInMillis(),
                 DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR));
+        dateAndTime.set(Calendar.HOUR_OF_DAY, 0);
+        dateAndTime.set(Calendar.MINUTE, 0);
+        dateAndTime.set(Calendar.SECOND, 0);
+        dateAndTime.set(Calendar.MILLISECOND, 0);
+        currentDate=dateAndTime.getTimeInMillis();
+        System.out.println(currentDate);
     }
 
     // установка обработчика выбора даты
@@ -171,20 +175,8 @@ public class MainActivity extends ListActivity {
             dateAndTime.set(Calendar.MONTH, monthOfYear);
             dateAndTime.set(Calendar.DAY_OF_MONTH, dayOfMonth);
             setInitialDateTime();
-            try {
-                String str_date="" + year + monthOfYear + dayOfMonth;
-                DateFormat formatter ;
-                Date date ;
-                formatter = new SimpleDateFormat("yyyymmdd");
-                date = (Date)formatter.parse(str_date);
-                currentDate=date.getTime();
-                System.out.println(currentDate);
-                Cursor oldCursor = userAdapter.swapCursor(db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60)));
-                if (oldCursor != null) oldCursor.close();
-            }
-            catch (ParseException e){
-                System.out.println("Exception :"+e);
-            }
+            Cursor oldCursor = userAdapter.swapCursor(db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60*1000-1)));
+            if (oldCursor != null) oldCursor.close();
         }
     };
 
@@ -461,7 +453,7 @@ class DatabaseHandler extends SQLiteOpenHelper{
                 "from\n" +
                 "docs inner join cars ON\n" +
                 "cars.id_1c = docs.car_id\n" +
-                "where docs.date>= ? and docs.date>= ?";
+                "where docs.date>= ? and docs.date<= ?";
         SQLiteDatabase db = this.getWritableDatabase();
         return db.rawQuery(selectQuery, new String[] {start_date, finish_date});
     }

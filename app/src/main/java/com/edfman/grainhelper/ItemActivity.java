@@ -24,8 +24,15 @@ public class ItemActivity extends AppCompatActivity {
         if(readOnly) {
             TextView temp = (TextView) findViewById(R.id.tvId);
             temp.setText(intent.getStringExtra("id"));
+            temp = (TextView) findViewById(R.id.tvDate);
+            temp.setText(intent.getStringExtra("date"));
+            temp = (TextView) findViewById(R.id.tvCreatedBy);
+            temp.setText(intent.getStringExtra("created_by"));
             EditText tempEd = (EditText) findViewById(R.id.tvCrop);
             tempEd.setText(intent.getStringExtra("crop"));
+            tempEd.setEnabled(false);
+            tempEd = findViewById(R.id.tvcar);
+            tempEd.setText(intent.getStringExtra("driver"));
             tempEd.setEnabled(false);
             tempEd = findViewById(R.id.tvDriver);
             tempEd.setText(intent.getStringExtra("driver"));
