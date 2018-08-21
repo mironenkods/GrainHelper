@@ -24,4 +24,5 @@
     <string name="rCrop">Crop</string>
     <string name="rWarehouse">Warehouse</string>
     <string name="rCreated">Created By</string>
+    <string name="rInvoice">Invoice</string>
 </resources>

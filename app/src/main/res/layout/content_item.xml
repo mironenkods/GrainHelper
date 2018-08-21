@@ -45,37 +45,63 @@
             android:textSize="@dimen/rMainFieldSize"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/tvCarLabel"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:editable="false"
-            android:paddingLeft="@dimen/activity_horizontal_margin"
-            android:text="@string/rCar" />
+            android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/tvcar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingLeft="@dimen/tv_left_padding"
-            android:textSize="@dimen/rMainFieldSize"
-            android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvDriverLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:editable="false"
-            android:paddingLeft="@dimen/activity_horizontal_margin"
-            android:text="@string/rDriver" />
+                <TextView
+                    android:id="@+id/tvCarLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:editable="false"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:text="@string/rCar" />
 
-        <EditText
-            android:id="@+id/tvDriver"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingLeft="@dimen/tv_left_padding"
-            android:textSize="@dimen/rMainFieldSize"
-            android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tvcar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingLeft="@dimen/tv_left_padding"
+                    android:textSize="@dimen/rMainFieldSize"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDriverLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:editable="false"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:text="@string/rDriver" />
+
+                <TextView
+                    android:id="@+id/tvDriver"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingLeft="@dimen/tv_left_padding"
+                    android:textSize="@dimen/rMainFieldSize"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/imageButtonBarCode"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="5"
+                android:background="@null"
+                app:srcCompat="@drawable/ic_bar_code" />
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tvFieldLabel"
@@ -85,13 +111,14 @@
             android:paddingLeft="@dimen/activity_horizontal_margin"
             android:text="@string/rField" />
 
-        <EditText
+        <AutoCompleteTextView
             android:id="@+id/tvField"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingLeft="@dimen/tv_left_padding"
             android:textSize="@dimen/rMainFieldSize"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:completionThreshold="1"/>
 
         <TextView
             android:id="@+id/tvCropLabel"
@@ -101,13 +128,14 @@
             android:paddingLeft="@dimen/activity_horizontal_margin"
             android:text="@string/rCrop" />
 
-        <EditText
+        <AutoCompleteTextView
             android:id="@+id/tvCrop"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingLeft="@dimen/tv_left_padding"
             android:textSize="@dimen/rMainFieldSize"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:completionThreshold="1"/>
 
         <TextView
             android:id="@+id/tvWarehouseLabel"
@@ -117,13 +145,14 @@
             android:paddingLeft="@dimen/activity_horizontal_margin"
             android:text="@string/rWarehouse" />
 
-        <EditText
+        <AutoCompleteTextView
             android:id="@+id/tvWarehouse"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingLeft="@dimen/tv_left_padding"
             android:textSize="@dimen/rMainFieldSize"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:completionThreshold="1"/>
 
         <TextView
             android:id="@+id/tvCreatedLabel"
