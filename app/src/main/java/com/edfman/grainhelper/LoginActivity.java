@@ -84,8 +84,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
     private boolean login_suc;
 
-  @Override
-    public void finish() {
+    public void myfinish() {
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
         intent.putExtra("login_suc", login_suc);
         intent.putExtra("login", mEmailView.getText().toString());
@@ -373,7 +372,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             toast.show();
 
 //            if (success) {
-                finish();
+                myfinish();
 //            } else {
 //                mPasswordView.setError(getString(R.string.error_incorrect_password));
 //                mPasswordView.requestFocus();
