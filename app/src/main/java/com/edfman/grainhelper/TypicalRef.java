@@ -1,5 +1,8 @@
 package com.edfman.grainhelper;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+
 public class TypicalRef {
         String id_1c;
         String title;
@@ -44,6 +47,15 @@ public class TypicalRef {
         public void setType(RefType type) {
             this.type = type;
         }
-    }
+
+        public static String[] getTitlesArray(ArrayList<TypicalRef> arrayList) {
+            ArrayList<String> array = new ArrayList<String>();
+            for (TypicalRef ref : arrayList) {
+                array.add(ref.title);
+            }
+
+            return array.toArray(new String[array.size()]);
+        }
+}
 
     enum RefType{car, driver, field, warehouse, crop}

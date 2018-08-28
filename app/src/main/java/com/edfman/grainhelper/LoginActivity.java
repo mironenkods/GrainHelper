@@ -19,8 +19,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -32,20 +30,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.IllegalFormatCodePointException;
 import java.util.List;
 
 import static android.Manifest.permission.READ_CONTACTS;
@@ -331,7 +316,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 // Simulate network access.
                 //Thread.sleep(2000);
 
-                request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/main/login?login=" + mEmail + "&password=" + mPassword + "", "GET");
+                request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/main/login?login=" + mEmail + "&password=" + mPassword + "");
 
             if (request!=null && request.code == 200){
                 login_suc = true;

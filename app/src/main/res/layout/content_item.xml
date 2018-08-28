@@ -152,7 +152,7 @@
             android:paddingLeft="@dimen/tv_left_padding"
             android:textSize="@dimen/rMainFieldSize"
             android:textStyle="bold"
-            android:completionThreshold="1"/>
+            android:completionThreshold="0"/>
 
         <TextView
             android:id="@+id/tvCreatedLabel"

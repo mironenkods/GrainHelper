@@ -3,52 +3,34 @@ package com.edfman.grainhelper;
 import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.ListActivity;
-import android.app.TimePickerDialog;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.telephony.TelephonyManager;
 import android.text.format.DateUtils;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.widget.DatePicker;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
-import android.widget.TimePicker;
 
 import com.google.gson.Gson;
 
-import java.io.Console;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
-public class MainActivity extends ListActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends ListActivity {
 
     boolean login_successful;
-    String lName;
+    String lName, deviceId;
     String lpass;
     private HTTPWorking.request_answer request;
     DatabaseHandler db;
@@ -77,7 +59,7 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         Intent intent = new Intent(MainActivity.this, ItemActivity.class);
-        Document doc = db.getStringDoc(position);
+        Document doc = db.getStringDoc((int)id);
 
         intent.putExtra("readOnly", true);
         intent.putExtra("id", doc.getId());
@@ -100,8 +82,16 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
 
         // Create a calendar object that will convert the date and time value in milliseconds to date.
         Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(milliSeconds);
+        calendar.setTimeInMillis(milliSeconds * 1000);
         return formatter.format(calendar.getTime());
+    }
+
+    @Override
+    protected void onResume() {
+        setInitialDateTime();
+        Cursor oldCursor = userAdapter.swapCursor(db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60-1)));
+        if (oldCursor != null) oldCursor.close();
+        super.onResume();
     }
 
     @Override
@@ -115,7 +105,6 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
 
         //security adding
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -131,24 +120,26 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
                 Intent intent = new Intent(MainActivity.this, ItemActivity.class);
 
                 intent.putExtra("readOnly", false);
+                intent.putExtra("login", lName);
+                intent.putExtra("deviceId", deviceId);
                 startActivity(intent);
             }
         });
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+//        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+//        navigationView.setNavigationItemSelectedListener(this);
 
         Intent intent = getIntent();
 
         login_successful = intent.getBooleanExtra("login_suc", false);
         lName = intent.getStringExtra("login");
         lpass = intent.getStringExtra("password");
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+            deviceId = telephonyManager.getDeviceId();
+            System.out.println("EMAI" + deviceId);
+        }
 
         //create DB
         db = new DatabaseHandler(this);
@@ -158,14 +149,9 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
             renewRefs();
             db.getRefElements(TABLE_CARS);
             //get docs
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
-                TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-                String deviceId = telephonyManager.getDeviceId();
-                System.out.println("EMAI" + deviceId);
-                db.clearDocs();
-                getDocs(deviceId);
-            }
-
+            db.sendAllMessages(deviceId);
+            db.clearDocs();
+            getDocs(deviceId);
         }
         // вывод данных в List
         ListView userList = getListView();
@@ -176,53 +162,6 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
         userList.setAdapter(userAdapter);
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.nav_drawer, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
 
     // установка начальных даты и времени
     private void setInitialDateTime() {
@@ -249,13 +188,10 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
         }
     };
 
-    public void showMenu(View view){
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+    public void openSyncActivity(View view){
+        Intent intent = new Intent(MainActivity.this, SyncActivity.class);
+        intent.putExtra("deviceId", deviceId);
+        startActivity(intent);
     }
 
     // отображаем диалоговое окно для выбора даты
@@ -270,7 +206,7 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
     protected void renewRefs(){
             //clear all ref tables
             db.clearAllRefs();
-            request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "", "GET");
+            request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "");
             if (request.code == 200) {
                 Gson gson = new Gson();
                 Result result = gson.fromJson(request.Body, Result.class);
@@ -285,12 +221,12 @@ public class MainActivity extends ListActivity implements NavigationView.OnNavig
     }
 
     protected void getDocs(String deviceId){
-        request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/GetInvoices/get?&emei=" + deviceId + "", "GET");
+        request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/GetInvoices/get?&emei=" + deviceId + "");
         if (request.code == 200) {
             Gson gson = new Gson();
             DocsResult result = gson.fromJson(request.Body, DocsResult.class);
             for (Document doc : result.invoices) {
-                db.addDocument(doc);
+                db.addDocument(doc, "");
             }
         }
     }
@@ -407,4 +343,8 @@ class Result{
 
 class DocsResult{
     List<Document> invoices;
+
+    public DocsResult() {
+        this.invoices = new ArrayList<Document>();
+    }
 }

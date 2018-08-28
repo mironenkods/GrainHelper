@@ -6,13 +6,19 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.google.gson.Gson;
+
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class DatabaseHandler extends SQLiteOpenHelper {
 
 
+
+    private static final String server_Ip = "http://178.92.47.54:8085";
 
     private static final int DATABASE_VERSION       = 1;
     private static final String DATABASE_NAME       = "grain_helper";
@@ -22,16 +28,19 @@ class DatabaseHandler extends SQLiteOpenHelper {
     private static final String TABLE_WAREHOUSES    = "warehouses";
     private static final String TABLE_CROPS         = "crops";
     private static final String TABLE_DOCS          = "docs";
+    private static final String TABLE_MESS          = "messages";
     private static final String FIELD_ID            = "id";
     private static final String FIELD_1C_ID         = "id_1c";
     private static final String FIELD_TITLE         = "title";
     private static final String FIELD_DRIVER_ID     = "driver_id";
     private static final String FIELD_DATE          = "date";
     private static final String FIELD_CAR_ID        = "car_id";
+    private static final String FIELD_CAR_TITLE     = "car_title";
     private static final String FIELD_CROP_ID       = "crop_id";
     private static final String FIELD_FIELD_ID      = "field_id";
     private static final String FIELD_WAREHOUSE_ID  = "warehouse_id";
     private static final String FIELD_CREATED_BY    = "created_by";
+    private static final String FIELD_DOC_ID        = "doc_id";
 
 
     public DatabaseHandler(Context context) {
@@ -50,6 +59,11 @@ class DatabaseHandler extends SQLiteOpenHelper {
         db.execSQL(CREATE_TABLE);
         CREATE_TABLE = "create table if not exists " + TABLE_CROPS         + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + FIELD_1C_ID + " TEXT," + FIELD_TITLE + " TEXT)";
         db.execSQL(CREATE_TABLE);
+        CREATE_TABLE = "create table if not exists " + TABLE_MESS           + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                                                            + FIELD_DATE        + " LONG, "
+                                                                            + FIELD_CAR_ID      + " TEXT, "
+                                                                            + FIELD_DOC_ID     + " TEXT)";
+        db.execSQL(CREATE_TABLE);
         CREATE_TABLE = "create table if not exists " + TABLE_DOCS          + "(" + FIELD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + FIELD_TITLE + " TEXT,"
                 + FIELD_DATE + " LONG, "
@@ -67,7 +81,7 @@ class DatabaseHandler extends SQLiteOpenHelper {
 
     }
 
-    public void addDocument(Document document) {
+    public void addDocument(Document document, String deviceId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(FIELD_DATE, document.getDate());
@@ -78,7 +92,20 @@ class DatabaseHandler extends SQLiteOpenHelper {
         values.put(FIELD_WAREHOUSE_ID, document.getWarehouse_id());
         values.put(FIELD_CREATED_BY, document.getCreated_by());
 
-        db.insert(TABLE_DOCS, null, values);
+        long doc_id = db.insert(TABLE_DOCS, null, values);
+        if (deviceId != "") {
+            if (doc_id != -1) {
+                values = new ContentValues();
+                values.put(FIELD_DATE, document.getDate());
+                values.put(FIELD_DOC_ID, doc_id);
+
+                db.insert(TABLE_MESS, null, values);
+            }
+
+            //try send messages
+            this.sendAllMessages(deviceId);
+        }
+
         db.close();
     }
 
@@ -122,6 +149,7 @@ class DatabaseHandler extends SQLiteOpenHelper {
                 cursor.getString(7),
                 cursor.getString(8));
 
+        db.close();
         return document;
     }
 
@@ -137,8 +165,8 @@ class DatabaseHandler extends SQLiteOpenHelper {
                 "fields.title as field,\n" +
                 "warehouses.title as warehouse,\n" +
                 "docs.created_by\n" +
-                "from docs as docs inner join cars as cars on docs.car_id = cars.id_1c " +
-                "inner join fields as fields on docs.field_id = fields.id_1c left join crops as crops on docs.crop_id = crops.id_1c " +
+                "from docs as docs left join cars as cars on docs.car_id = cars.id_1c " +
+                "left join fields as fields on docs.field_id = fields.id_1c left join crops as crops on docs.crop_id = crops.id_1c " +
                 "left join warehouses as  warehouses on docs.warehouse_id = warehouses.id_1c\n" +
                 "where docs.id>= ?", new String[] {String.valueOf(id)}, null);
 
@@ -156,6 +184,7 @@ class DatabaseHandler extends SQLiteOpenHelper {
                 cursor.getString(6),
                 cursor.getString(7));
 
+        db.close();
         return document;
     }
 
@@ -181,6 +210,7 @@ class DatabaseHandler extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
+        db.close();
         return docsList;
     }
 
@@ -208,10 +238,46 @@ class DatabaseHandler extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
+        db.close();
         return refList;
     }
 
-    public String[] getRefElementsArray(String table_name) {
+    public ArrayList<TypicalRef> getRefElementsArrayList(String table_name) {
+        ArrayList<TypicalRef> refList = new ArrayList<TypicalRef>();
+        String selectQuery = "SELECT  * FROM " + table_name;
+
+        RefType currType = null;
+        if (table_name == TABLE_WAREHOUSES) currType = RefType.warehouse;
+        else if (table_name == TABLE_FIELDS) currType = RefType.field;
+        else if (table_name == TABLE_DRIVERS) currType = RefType.driver;
+        else if (table_name == TABLE_CROPS) currType = RefType.crop;
+        else if (table_name == TABLE_CARS) currType = RefType.car;
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        cursor.moveToFirst();
+        while(!cursor.isAfterLast()) {
+            if (table_name != TABLE_CARS){
+                refList.add(new TypicalRef( cursor.getString(cursor.getColumnIndex("id_1c")),
+                        cursor.getString(cursor.getColumnIndex("title")),
+                        "",
+                        currType));
+            } else {
+                refList.add(new TypicalRef(cursor.getString(cursor.getColumnIndex("id_1c")),
+                        cursor.getString(cursor.getColumnIndex("title")),
+                        cursor.getString(cursor.getColumnIndex("driver_id")),
+                        currType));
+            }
+            cursor.moveToNext();
+        }
+        cursor.close();
+        db.close();
+        return refList;
+
+    }
+
+    public Map<String, String> getRefElementsMap(String table_name) {
         List<TypicalRef> refList = new ArrayList<TypicalRef>();
         String selectQuery = "SELECT  * FROM " + table_name;
 
@@ -219,13 +285,14 @@ class DatabaseHandler extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(selectQuery, null);
 
         cursor.moveToFirst();
-        ArrayList<String> names = new ArrayList<String>();
+        Map<String, String> names = new HashMap<>();
         while(!cursor.isAfterLast()) {
-            names.add(cursor.getString(cursor.getColumnIndex("title")));
+            names.put(cursor.getString(cursor.getColumnIndex("title")),cursor.getString(cursor.getColumnIndex("id_1c")));
             cursor.moveToNext();
         }
         cursor.close();
-        return names.toArray(new String[names.size()]);
+        db.close();
+        return names;
 
     }
 
@@ -256,6 +323,8 @@ class DatabaseHandler extends SQLiteOpenHelper {
                         curr_type);
 
         }
+        cursor.close();
+        db.close();
         return ref;
     }
 
@@ -282,6 +351,8 @@ class DatabaseHandler extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
+        cursor.close();
+        db.close();
         return docsList;
     }
 
@@ -289,14 +360,22 @@ class DatabaseHandler extends SQLiteOpenHelper {
         List<Document> docsList = new ArrayList<Document>();
         String selectQuery = "select\n" +
                 "docs.id AS _id,\n" +
-                "docs.driver_id AS driver,\n" +
-                "cars.title AS car\n" +
+                "ifnull(docs.driver_id, '')  AS driver,\n" +
+                "ifnull(cars.title, '') AS car\n" +
                 "from\n" +
-                "docs inner join cars ON\n" +
+                "docs left join cars ON\n" +
                 "cars.id_1c = docs.car_id\n" +
                 "where docs.date>= ? and docs.date<= ?";
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery(selectQuery, new String[] {start_date, finish_date});
+    }
+
+    public Cursor getMessages_Cursor() {
+        List<Document> docsList = new ArrayList<Document>();
+        String selectQuery = "select messages.id AS _id, messages.date AS date, cars.title AS car from " + TABLE_MESS + " AS messages LEFT JOIN cars AS cars ON messages.car_id = cars.id_1c";
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        return db.rawQuery(selectQuery, null);
     }
 
     public void clearAllRefs(){
@@ -306,11 +385,65 @@ class DatabaseHandler extends SQLiteOpenHelper {
         db.delete(TABLE_DRIVERS, null, null);
         db.delete(TABLE_FIELDS, null, null);
         db.delete(TABLE_WAREHOUSES, null, null);
+        db.close();
     }
 
     public void clearDocs(){
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_DOCS, null, null);
+        db.close();
+    }
+
+    public void clearMessages(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_MESS, null, null);
+        db.close();
+    }
+
+    public void sendAllMessages(String deviceId){
+        SQLiteDatabase db = this.getReadableDatabase();
+        DocsResult docsResult = new DocsResult();
+
+        Cursor cursor = db.rawQuery("select\n" +
+                "docs.id,\n" +
+                "docs.driver_id as driver,\n" +
+                "docs.date,\n" +
+                "docs.car_id as car,\n" +
+                "docs.crop_id as crop,\n" +
+                "docs.field_id as field,\n" +
+                "docs.warehouse_id as warehouse,\n" +
+                "docs.created_by\n" +
+                "from messages as messages inner join docs as docs on messages.doc_id = docs.id", null, null);
+
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()){
+        // int id, String driver_id, long date, String car_id, String crop_id, String field_id, String warehouse_id, String created_by) {
+        Document document = new Document(
+                cursor.getInt(0),
+                cursor.getString(1),
+                cursor.getLong(2),
+                cursor.getString(3),
+                cursor.getString(4),
+                cursor.getString(5),
+                cursor.getString(6),
+                cursor.getString(7));
+            docsResult.invoices.add(document);
+            cursor.moveToNext();
+        }
+
+        cursor.close();
+        db.close();
+
+        if (docsResult.invoices != null && !docsResult.invoices.isEmpty()) {
+            Gson gson = new Gson();
+            String body = gson.toJson(docsResult);
+
+            HTTPWorking.request_answer request = new HTTPWorking().callWebServicePost(server_Ip + "/agro_ves/hs/Grain/main/post?&emei=" + deviceId + "", body);
+            if (request!= null && request.code == 200) {
+                clearMessages();
+            }
+        }
+
     }
 }
 

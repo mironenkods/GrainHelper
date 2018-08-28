@@ -12,12 +12,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 public class ItemActivity extends AppCompatActivity {
 
@@ -28,6 +31,12 @@ public class ItemActivity extends AppCompatActivity {
     private static final String TABLE_CROPS         = "crops";
 
     DatabaseHandler db;
+
+    Document new_doc = new Document();
+
+    ArrayList<TypicalRef> arrayListFields, arrayListCrops, arrayListWare;
+
+    String lName, deviceId;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -53,6 +62,8 @@ public class ItemActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         Boolean readOnly = intent.getBooleanExtra("readOnly", true);
+        deviceId = intent.getStringExtra("deviceId");
+        lName = intent.getStringExtra("login");
         if(readOnly) {
             TextView temp = (TextView) findViewById(R.id.tvId);
             temp.setText(String.valueOf(intent.getIntExtra("id", 0)));
@@ -102,15 +113,48 @@ public class ItemActivity extends AppCompatActivity {
             temp = (TextView) findViewById(R.id.tvCreatedLabel);
             temp.setVisibility(View.GONE);
             AutoCompleteTextView autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.tvField);
-            ArrayAdapter<String> adapter =  new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, db.getRefElementsArray(TABLE_FIELDS));
+            arrayListFields = db.getRefElementsArrayList(TABLE_FIELDS);
+            ArrayAdapter<String> adapter =  new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, TypicalRef.getTitlesArray(arrayListFields));
             autoCompleteTextView.setAdapter(adapter);
+            autoCompleteTextView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    new_doc.setField_id(arrayListFields.get((int)id).id_1c);
+                }
+            });
             autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.tvCrop);
-            adapter =  new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, db.getRefElementsArray(TABLE_CROPS));
+            arrayListCrops = db.getRefElementsArrayList(TABLE_CROPS);
+            adapter =  new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, TypicalRef.getTitlesArray(arrayListCrops));
             autoCompleteTextView.setAdapter(adapter);
+            autoCompleteTextView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    new_doc.setCrop_id(arrayListCrops.get((int)id).id_1c);
+                }
+            });
             autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.tvWarehouse);
-            adapter =  new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, db.getRefElementsArray(TABLE_WAREHOUSES));
+            arrayListWare = db.getRefElementsArrayList(TABLE_WAREHOUSES);
+            adapter =  new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, TypicalRef.getTitlesArray(arrayListWare));
             autoCompleteTextView.setAdapter(adapter);
+            autoCompleteTextView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    new_doc.setWarehouse_id(arrayListWare.get((int)id).id_1c);
+                }
+            });
+
         }
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new_doc.setDate(System.currentTimeMillis()/1000);
+                new_doc.setCreated_by(lName);
+                db.addDocument(new_doc, deviceId);
+                finish();
+            }
+        });
 
         ImageButton imgButton = (ImageButton) findViewById(R.id.imageButtonBarCode);
         imgButton.setOnClickListener(new View.OnClickListener() {
@@ -125,6 +169,8 @@ public class ItemActivity extends AppCompatActivity {
                 }
             }
 
+
+
             public void onActivityResult(int requestCode, int resultCode, Intent intent) {
                 if (requestCode == 0) {
                     if (resultCode == RESULT_OK) {
@@ -137,8 +183,11 @@ public class ItemActivity extends AppCompatActivity {
                             if (massResult.length == 4) {
                                 TextView vtextView = (TextView) findViewById(R.id.tvcar);
                                 vtextView.setText(db.getRefById(TABLE_CARS, massResult[1]).title);
+                                new_doc.setCar_id(massResult[1]);
                                 vtextView = (TextView) findViewById(R.id.tvDriver);
-                                vtextView.setText(db.getRefById(TABLE_DRIVERS, massResult[3]).title);
+                                String s = db.getRefById(TABLE_DRIVERS, massResult[3]).title;
+                                vtextView.setText(s);
+                                new_doc.setdriver_id(s);
                             }
 
                         }
