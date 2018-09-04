@@ -20,6 +20,9 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
 import java.util.ArrayList;
 
 public class ItemActivity extends AppCompatActivity {
@@ -37,6 +40,9 @@ public class ItemActivity extends AppCompatActivity {
     ArrayList<TypicalRef> arrayListFields, arrayListCrops, arrayListWare;
 
     String lName, deviceId;
+
+    IntentIntegrator scanIntegrator;
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -156,48 +162,63 @@ public class ItemActivity extends AppCompatActivity {
             }
         });
 
+        scanIntegrator = new IntentIntegrator(this);
+
+
         ImageButton imgButton = (ImageButton) findViewById(R.id.imageButtonBarCode);
         imgButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-                intent.putExtra("SCAN_MODE", "ONE_D_MODE");
-                try {
-                    startActivityForResult(intent, 0);
-                } catch (Exception e) {
-                    System.out.print("Need to install zxing");
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.zxing.client.android&hl=en")));
-                }
-            }
-
-
-
-            public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-                if (requestCode == 0) {
-                    if (resultCode == RESULT_OK) {
-                        String contents = intent.getStringExtra("SCAN_RESULT");
-                        String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
-                        if (format == "Code128") {
-                            //parse srting
-
-                            String[] massResult = contents.split("/");
-                            if (massResult.length == 4) {
-                                TextView vtextView = (TextView) findViewById(R.id.tvcar);
-                                vtextView.setText(db.getRefById(TABLE_CARS, massResult[1]).title);
-                                new_doc.setCar_id(massResult[1]);
-                                vtextView = (TextView) findViewById(R.id.tvDriver);
-                                String s = db.getRefById(TABLE_DRIVERS, massResult[3]).title;
-                                vtextView.setText(s);
-                                new_doc.setdriver_id(s);
-                            }
-
-                        }
-
-
-                    }
-                }
-
+                scanIntegrator.initiateScan();
             }
         });
+
+//        parseContent("1/000000026/000000027/BAH 939068");
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        IntentResult scanningResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (scanningResult != null) {
+            //we have a result
+            String scanContent = scanningResult.getContents();
+            String scanFormat = scanningResult.getFormatName();
+            //parse srting
+
+               parseContent(scanContent);
+        }
+        else{
+            Toast toast = Toast.makeText(getApplicationContext(),
+                    "No scan data received!", Toast.LENGTH_SHORT);
+            toast.show();
+        }
+    }
+
+    public void parseContent(String scanContent) {
+        String[] massResult = scanContent.split("/");
+        if (massResult.length == 4) {
+            TypicalRef car = db.getRefById(TABLE_CARS, massResult[1]);
+            TextView vtextView = (TextView) findViewById(R.id.tvcar);
+            if (car == null){
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        R.string.CarNotFound, Toast.LENGTH_SHORT);
+                toast.show();
+                vtextView.setText(massResult[1]);
+            } else vtextView.setText(car.title);
+            new_doc.setCar_id(massResult[1]);
+            vtextView = (TextView) findViewById(R.id.tvDriver);
+            TypicalRef driver = db.getRefById(TABLE_DRIVERS, massResult[3]);
+            if (driver == null){
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        R.string.DriverNotFound, Toast.LENGTH_SHORT);
+                toast.show();
+                vtextView.setText(massResult[3]);
+            } else vtextView.setText(driver.title);
+            new_doc.setdriver_id(massResult[3]);
+        }
+        else{
+            Toast toast = Toast.makeText(getApplicationContext(),
+                    R.string.NotRigData, Toast.LENGTH_SHORT);
+            toast.show();
+        }
+    }
 }

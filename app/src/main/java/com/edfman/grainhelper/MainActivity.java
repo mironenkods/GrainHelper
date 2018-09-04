@@ -38,6 +38,7 @@ public class MainActivity extends ListActivity {
 
     TextView currentDateTime;
     long currentDate;
+    static long lastSync_refs, lastSync_docs;
 
     Calendar dateAndTime = Calendar.getInstance();
 
@@ -54,6 +55,14 @@ public class MainActivity extends ListActivity {
     final String ATTRIBUTE_NAME_driver = "driver";
 
     SimpleCursorAdapter userAdapter;
+
+    public static long get_last_docs_sync(){
+        return lastSync_docs;
+    }
+
+    public static long get_last_refs_sync(){
+        return lastSync_refs;
+    }
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
@@ -126,9 +135,6 @@ public class MainActivity extends ListActivity {
             }
         });
 
-//        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-//        navigationView.setNavigationItemSelectedListener(this);
-
         Intent intent = getIntent();
 
         login_successful = intent.getBooleanExtra("login_suc", false);
@@ -146,7 +152,7 @@ public class MainActivity extends ListActivity {
 
         //need to fill db from web-service
         if (login_successful) {
-            renewRefs();
+            db.renewRefs(lName, lpass);
             db.getRefElements(TABLE_CARS);
             //get docs
             db.sendAllMessages(deviceId);
@@ -157,6 +163,7 @@ public class MainActivity extends ListActivity {
         ListView userList = getListView();
         String[] headers = new String[] {ATTRIBUTE_NAME_car, ATTRIBUTE_NAME_driver, ATTRIBUTE_NAME_id};
         Cursor userCursor = db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60));
+        if (userCursor.getCount() > 0) findViewById(R.id.tvNoData2).setVisibility(View.GONE);
         userAdapter = new SimpleCursorAdapter(this, R.layout.item,
                 userCursor, headers, new int[]{R.id.tvCar, R.id.tvDriver, R.id.tvInvoiceId}, 0);
         userList.setAdapter(userAdapter);
@@ -191,6 +198,8 @@ public class MainActivity extends ListActivity {
     public void openSyncActivity(View view){
         Intent intent = new Intent(MainActivity.this, SyncActivity.class);
         intent.putExtra("deviceId", deviceId);
+        intent.putExtra("lName", lName);
+        intent.putExtra("lpass", lpass);
         startActivity(intent);
     }
 
@@ -203,23 +212,6 @@ public class MainActivity extends ListActivity {
                 .show();
     }
 
-    protected void renewRefs(){
-            //clear all ref tables
-            db.clearAllRefs();
-            request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "");
-            if (request.code == 200) {
-                Gson gson = new Gson();
-                Result result = gson.fromJson(request.Body, Result.class);
-                for (TypicalRef ref : result.result_list) {
-                    if (ref.type == RefType.car) db.addRef(ref, TABLE_CARS);
-                    if (ref.type == RefType.crop) db.addRef(ref, TABLE_CROPS);
-                    if (ref.type == RefType.driver) db.addRef(ref, TABLE_DRIVERS);
-                    if (ref.type == RefType.field) db.addRef(ref, TABLE_FIELDS);
-                    if (ref.type == RefType.warehouse) db.addRef(ref, TABLE_WAREHOUSES);
-                }
-            }
-    }
-
     protected void getDocs(String deviceId){
         request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/GetInvoices/get?&emei=" + deviceId + "");
         if (request.code == 200) {
@@ -228,6 +220,7 @@ public class MainActivity extends ListActivity {
             for (Document doc : result.invoices) {
                 db.addDocument(doc, "");
             }
+            lastSync_docs = System.currentTimeMillis()/1000 + 2 * 60 * 60;
         }
     }
 

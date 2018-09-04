@@ -36,4 +36,10 @@
     <string name="sync_center">Sync center</string>
     <string name="about">About</string>
     <string name="sync_centr">Sync center</string>
+    <string name="NotRigData">Not right data format</string>
+    <string name="DriverNotFound">Driver not found</string>
+    <string name="CarNotFound">Car not found</string>
+    <string name="DocsLastSync">Docs last sync</string>
+    <string name="RefLastSync">Refs last sync</string>
+    <string name="NoData">No data</string>
 </resources>

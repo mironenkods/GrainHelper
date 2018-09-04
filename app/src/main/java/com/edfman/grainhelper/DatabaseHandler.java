@@ -300,13 +300,13 @@ class DatabaseHandler extends SQLiteOpenHelper {
         List<TypicalRef> refList = new ArrayList<TypicalRef>();
         String selectQuery;
         if(table_name==TABLE_DRIVERS){
-            selectQuery = "SELECT  * FROM " + table_name + " WHERE " + table_name + ".title LIKE %?%";
+            selectQuery = "SELECT  * FROM " + table_name + " WHERE " + table_name + ".title LIKE ?";
         } else {
             selectQuery = "SELECT  * FROM " + table_name + " WHERE " + table_name + ".id=?";
         }
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, new String[]{id});
+        Cursor cursor = db.rawQuery(selectQuery, new String[]{"%" + id + "%"});
         RefType curr_type = RefType.car;
         if(table_name==TABLE_CARS) curr_type = RefType.car;
         if(table_name==TABLE_CROPS) curr_type = RefType.crop;
@@ -316,11 +316,20 @@ class DatabaseHandler extends SQLiteOpenHelper {
         TypicalRef ref = null;
         if (cursor.moveToFirst()) {
 
+            if(table_name==TABLE_DRIVERS){
+                ref = new TypicalRef(
+                        cursor.getString(1),
+                        cursor.getString(2),
+                        "",
+                        curr_type);
+            } else {
                 ref = new TypicalRef(
                         cursor.getString(1),
                         cursor.getString(2),
                         cursor.getString(3),
                         curr_type);
+            }
+
 
         }
         cursor.close();
@@ -441,9 +450,32 @@ class DatabaseHandler extends SQLiteOpenHelper {
             HTTPWorking.request_answer request = new HTTPWorking().callWebServicePost(server_Ip + "/agro_ves/hs/Grain/main/post?&emei=" + deviceId + "", body);
             if (request!= null && request.code == 200) {
                 clearMessages();
+                MainActivity.lastSync_docs = System.currentTimeMillis()/1000  + 2 * 60 * 60;
             }
         }
 
     }
+
+    protected void renewRefs(String lName, String lpass){
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        HTTPWorking.request_answer request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "");
+        if (request.code == 200) {
+            //clear all ref tables
+            clearAllRefs();
+            Gson gson = new Gson();
+            Result result = gson.fromJson(request.Body, Result.class);
+            for (TypicalRef ref : result.result_list) {
+                if (ref.type == RefType.car) addRef(ref, TABLE_CARS);
+                if (ref.type == RefType.crop) addRef(ref, TABLE_CROPS);
+                if (ref.type == RefType.driver) addRef(ref, TABLE_DRIVERS);
+                if (ref.type == RefType.field) addRef(ref, TABLE_FIELDS);
+                if (ref.type == RefType.warehouse) addRef(ref, TABLE_WAREHOUSES);
+            }
+            MainActivity.lastSync_refs = System.currentTimeMillis()/1000 + 2 * 60 * 60;
+        }
+    }
+
 }
 

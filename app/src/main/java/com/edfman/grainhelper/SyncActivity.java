@@ -14,6 +14,7 @@ import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.TextView;
 
 public class SyncActivity extends ListActivity {
 
@@ -25,7 +26,7 @@ public class SyncActivity extends ListActivity {
     long currentDate;
     DatabaseHandler db;
     SimpleCursorAdapter userAdapter;
-    String deviceId;
+    String deviceId, lName, lpass;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +34,8 @@ public class SyncActivity extends ListActivity {
         setContentView(R.layout.activity_sync);
 
         deviceId = getIntent().getStringExtra("deviceId");
+        lpass = getIntent().getStringExtra("lpass");
+        lName = getIntent().getStringExtra("lName");
         //create DB
         db = new DatabaseHandler(this);
 
@@ -40,6 +43,7 @@ public class SyncActivity extends ListActivity {
         ListView userList = getListView();
         String[] headers = new String[] {ATTRIBUTE_NAME_car, ATTRIBUTE_NAME_driver, ATTRIBUTE_NAME_id};
         Cursor userCursor = db.getMessages_Cursor();
+        if (userCursor.getCount() > 0) findViewById(R.id.tvNoData).setVisibility(View.GONE);
         userAdapter = new SimpleCursorAdapter(this, R.layout.item,
                 userCursor, headers, new int[]{R.id.tvCar, R.id.tvDriver, R.id.tvInvoiceId}, 0);
         userList.setAdapter(userAdapter);
@@ -49,7 +53,25 @@ public class SyncActivity extends ListActivity {
             @Override
             public void onClick(View view) {
                 db.sendAllMessages(deviceId);
+                updateDates();
             }
         });
+
+        fab = (FloatingActionButton) findViewById(R.id.fab_SyncRefs);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                db.renewRefs(lName, lpass);
+                updateDates();
+            }
+        });
+        updateDates();
+    }
+
+    public void updateDates() {
+        TextView temp = (TextView) findViewById(R.id.tvLastSyncRefs);
+        temp.setText(getString(R.string.RefLastSync) + ": " + MainActivity.convertLongDate(MainActivity.get_last_refs_sync(), "dd/MM/yyyy hh:mm"));
+        temp = (TextView) findViewById(R.id.tvLastSyncDocs);
+        temp.setText(getString(R.string.DocsLastSync) + ": " + MainActivity.convertLongDate(MainActivity.get_last_docs_sync(), "dd/MM/yyyy hh:mm"));
     }
 }
