@@ -2,6 +2,7 @@ package com.edfman.grainhelper;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -155,6 +157,32 @@ public class ItemActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // Reset errors.
+                TextView mCar = (TextView) findViewById(R.id.tvcar);
+                mCar.setError(null);
+                TextView mDriver  = (TextView) findViewById(R.id.tvDriver);
+                mDriver.setError(null);
+
+                // Store values at the time of the login attempt.
+                String car = mCar.getText().toString();
+                String driver = mDriver.getText().toString();
+
+                boolean cancel = false;
+
+                // Check for a valid car
+                if (TextUtils.isEmpty(car)) {
+                    mCar.setError(getString(R.string.error_field_required));
+                    cancel = true;
+                }
+                // Check for a valid car
+                if (TextUtils.isEmpty(driver)) {
+                    mCar.setError(getString(R.string.error_field_required));
+                    cancel = true;
+                }
+
+                if (cancel) {
+                    return;
+                }
                 new_doc.setDate(System.currentTimeMillis()/1000);
                 new_doc.setCreated_by(lName);
                 db.addDocument(new_doc, deviceId);
@@ -170,9 +198,11 @@ public class ItemActivity extends AppCompatActivity {
             public void onClick(View v) {
                 scanIntegrator.initiateScan();
             }
+
         });
 
 //        parseContent("1/000000026/000000027/BAH 939068");
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 
     @Override
@@ -184,7 +214,9 @@ public class ItemActivity extends AppCompatActivity {
             String scanFormat = scanningResult.getFormatName();
             //parse srting
 
-               parseContent(scanContent);
+            if (scanContent != null) {
+                parseContent(scanContent);
+            }
         }
         else{
             Toast toast = Toast.makeText(getApplicationContext(),
@@ -192,6 +224,7 @@ public class ItemActivity extends AppCompatActivity {
             toast.show();
         }
     }
+
 
     public void parseContent(String scanContent) {
         String[] massResult = scanContent.split("/");
