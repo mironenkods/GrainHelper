@@ -2,6 +2,7 @@ package com.edfman.grainhelper;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.net.Uri;
@@ -45,6 +46,10 @@ public class ItemActivity extends AppCompatActivity {
 
     IntentIntegrator scanIntegrator;
 
+    SharedPreferences sPref;
+    final String SAVED_FIELD = "saved_field";
+    final String SAVED_CROP = "saved_crop";
+    final String SAVED_WAREHOUSE = "saved_warehouse";
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -130,6 +135,16 @@ public class ItemActivity extends AppCompatActivity {
                     new_doc.setField_id(arrayListFields.get((int)id).id_1c);
                 }
             });
+            sPref = getPreferences(MODE_PRIVATE);
+            String savedText = sPref.getString(SAVED_FIELD, "");
+            TypicalRef ref = null;
+            if (savedText != "") {
+                ref = db.getRefById(TABLE_FIELDS, savedText);
+                if (ref != null) {
+                    new_doc.field_id = savedText;
+                    autoCompleteTextView.setText(ref.title);
+                }
+            }
             autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.tvCrop);
             arrayListCrops = db.getRefElementsArrayList(TABLE_CROPS);
             adapter =  new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, TypicalRef.getTitlesArray(arrayListCrops));
@@ -140,6 +155,15 @@ public class ItemActivity extends AppCompatActivity {
                     new_doc.setCrop_id(arrayListCrops.get((int)id).id_1c);
                 }
             });
+            sPref = getPreferences(MODE_PRIVATE);
+            savedText = sPref.getString(SAVED_CROP, "");
+            if (savedText != "") {
+                ref = db.getRefById(TABLE_CROPS, savedText);
+                if (ref != null) {
+                    new_doc.crop_id = savedText;
+                    autoCompleteTextView.setText(ref.title);
+                }
+            }
             autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.tvWarehouse);
             arrayListWare = db.getRefElementsArrayList(TABLE_WAREHOUSES);
             adapter =  new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, TypicalRef.getTitlesArray(arrayListWare));
@@ -150,6 +174,15 @@ public class ItemActivity extends AppCompatActivity {
                     new_doc.setWarehouse_id(arrayListWare.get((int)id).id_1c);
                 }
             });
+            sPref = getPreferences(MODE_PRIVATE);
+            savedText = sPref.getString(SAVED_WAREHOUSE, "");
+            if (savedText != "") {
+                ref = db.getRefById(TABLE_WAREHOUSES, savedText);
+                if (ref != null) {
+                    new_doc.warehouse_id = savedText;
+                    autoCompleteTextView.setText(ref.title);
+                }
+            }
 
         }
 
@@ -162,10 +195,19 @@ public class ItemActivity extends AppCompatActivity {
                 mCar.setError(null);
                 TextView mDriver  = (TextView) findViewById(R.id.tvDriver);
                 mDriver.setError(null);
+                TextView mField  = (TextView) findViewById(R.id.tvField);
+                mDriver.setError(null);
+                TextView mCrop  = (TextView) findViewById(R.id.tvCrop);
+                mDriver.setError(null);
+                TextView mWarehouse  = (TextView) findViewById(R.id.tvWarehouse);
+                mDriver.setError(null);
 
                 // Store values at the time of the login attempt.
                 String car = mCar.getText().toString();
                 String driver = mDriver.getText().toString();
+                String crop = mCrop.getText().toString();
+                String field = mField.getText().toString();
+                String warehouse = mWarehouse.getText().toString();
 
                 boolean cancel = false;
 
@@ -180,9 +222,33 @@ public class ItemActivity extends AppCompatActivity {
                     cancel = true;
                 }
 
+                // Check for a valid crop
+                if (TextUtils.isEmpty(crop)) {
+                    mCrop.setError(getString(R.string.error_field_required));
+                    cancel = true;
+                }
+
+                // Check for a valid field
+                if (TextUtils.isEmpty(field)) {
+                    mField.setError(getString(R.string.error_field_required));
+                    cancel = true;
+                }
+
+                // Check for a valid car
+                if (TextUtils.isEmpty(warehouse)) {
+                    mWarehouse.setError(getString(R.string.error_field_required));
+                    cancel = true;
+                }
+
                 if (cancel) {
                     return;
                 }
+                sPref = getPreferences(MODE_PRIVATE);
+                SharedPreferences.Editor ed = sPref.edit();
+                ed.putString(SAVED_CROP, new_doc.crop_id);
+                ed.putString(SAVED_FIELD, new_doc.field_id);
+                ed.putString(SAVED_WAREHOUSE, new_doc.warehouse_id);
+                ed.commit();
                 new_doc.setDate(System.currentTimeMillis()/1000);
                 new_doc.setCreated_by(lName);
                 db.addDocument(new_doc, deviceId);
@@ -201,7 +267,7 @@ public class ItemActivity extends AppCompatActivity {
 
         });
 
-//        parseContent("1/000000026/000000027/BAH 939068");
+        parseContent("1/000000026/000000027/BAH 939068");
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 

@@ -1,12 +1,17 @@
 package com.edfman.grainhelper;
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.annotation.TargetApi;
 import android.app.DatePickerDialog;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.design.widget.FloatingActionButton;
@@ -19,6 +24,7 @@ import android.widget.DatePicker;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 
@@ -55,6 +61,12 @@ public class MainActivity extends ListActivity {
     final String ATTRIBUTE_NAME_driver = "driver";
 
     SimpleCursorAdapter userAdapter;
+
+    private View mProgressView;
+    private View mFormView;
+    private View mNoDataView;
+
+    private UserTask mAuthTask = null;
 
     public static long get_last_docs_sync(){
         return lastSync_docs;
@@ -98,8 +110,10 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onResume() {
         setInitialDateTime();
-        Cursor oldCursor = userAdapter.swapCursor(db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60-1)));
-        if (oldCursor != null) oldCursor.close();
+        if(userAdapter != null) {
+            Cursor oldCursor = userAdapter.swapCursor(db.getDocsByDate_Cursor(String.valueOf(currentDate), String.valueOf(currentDate + 24 * 60 * 60 - 1)));
+            if (oldCursor != null) oldCursor.close();
+        }
         super.onResume();
     }
 
@@ -150,25 +164,72 @@ public class MainActivity extends ListActivity {
         //create DB
         db = new DatabaseHandler(this);
 
+        mFormView = findViewById(R.id.include);
+        mProgressView = findViewById(R.id.login_progress2);
+        mNoDataView = findViewById(R.id.tvNoData2);
         //need to fill db from web-service
-        if (login_successful) {
+        showProgress(true);
+        mAuthTask = new MainActivity.UserTask(lName, lpass, deviceId);
+        mAuthTask.execute((Void) null);
+        /*if (login_successful) {
             db.renewRefs(lName, lpass);
             db.getRefElements(TABLE_CARS);
-            //get docs
-            db.sendAllMessages(deviceId);
-            db.clearDocs();
-            getDocs(deviceId);
-        }
+           // get docs
+            if (deviceId != null) {
+                db.sendAllMessages(deviceId);
+                db.clearDocs();
+                getDocs(deviceId);
+            }
+        }*/
         // вывод данных в List
-        ListView userList = getListView();
+        /*ListView userList = getListView();
         String[] headers = new String[] {ATTRIBUTE_NAME_car, ATTRIBUTE_NAME_driver, ATTRIBUTE_NAME_id};
         Cursor userCursor = db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60));
-        if (userCursor.getCount() > 0) findViewById(R.id.tvNoData2).setVisibility(View.GONE);
+        if (userCursor.getCount() > 0) {
+            findViewById(R.id.tvNoData2).setVisibility(View.GONE);
+        } else
+        {
+            findViewById(R.id.tvNoData2).setVisibility(View.VISIBLE);
+        }
         userAdapter = new SimpleCursorAdapter(this, R.layout.item,
                 userCursor, headers, new int[]{R.id.tvCar, R.id.tvDriver, R.id.tvInvoiceId}, 0);
-        userList.setAdapter(userAdapter);
+        userList.setAdapter(userAdapter);*/
     }
 
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+    private void showProgress(final boolean show) {
+        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
+        // for very easy animations. If available, use these APIs to fade-in
+        // the progress spinner.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+            mNoDataView.setVisibility(show ? View.GONE : View.VISIBLE);
+            mFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+            mFormView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+                }
+            });
+
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mProgressView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                }
+            });
+        } else {
+            // The ViewPropertyAnimator APIs are not available, so simply show
+            // and hide the relevant UI components.
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+            mNoDataView.setVisibility(show ? View.GONE : View.VISIBLE);
+        }
+    }
 
     // установка начальных даты и времени
     private void setInitialDateTime() {
@@ -213,7 +274,7 @@ public class MainActivity extends ListActivity {
     }
 
     protected void getDocs(String deviceId){
-        request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/GetInvoices/get?&emei=" + deviceId + "");
+        request = new HTTPWorking().callWebService(server_Ip + "/agro/hs/Grain/GetInvoices/get?&emei=" + deviceId + "");
         if (request.code == 200) {
             Gson gson = new Gson();
             DocsResult result = gson.fromJson(request.Body, DocsResult.class);
@@ -223,6 +284,75 @@ public class MainActivity extends ListActivity {
             lastSync_docs = System.currentTimeMillis()/1000 + 2 * 60 * 60;
         }
     }
+
+    public void finishUpadte(){
+        ListView userList = getListView();
+        String[] headers = new String[] {ATTRIBUTE_NAME_car, ATTRIBUTE_NAME_driver, ATTRIBUTE_NAME_id};
+        Cursor userCursor = db.getDocsByDate_Cursor(String.valueOf(currentDate),String.valueOf(currentDate + 24*60*60));
+        if (userCursor.getCount() > 0) {
+            findViewById(R.id.tvNoData2).setVisibility(View.GONE);
+        } else
+        {
+            findViewById(R.id.tvNoData2).setVisibility(View.VISIBLE);
+        }
+        userAdapter = new SimpleCursorAdapter(this, R.layout.item,
+                userCursor, headers, new int[]{R.id.tvCar, R.id.tvDriver, R.id.tvInvoiceId}, 0);
+        userList.setAdapter(userAdapter);
+    }
+
+    /**
+     * Represents an asynchronous login/registration task used to authenticate
+     * the user.
+     */
+    public class UserTask extends AsyncTask<Void, Void, Boolean> {
+
+        private final String mEmail;
+        private final String mPassword;
+        private final String mdeviceId;
+
+        UserTask(String email, String password, String deviceId) {
+            mEmail = email;
+            mPassword = password;
+            mdeviceId = deviceId;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            //            try {
+            // Simulate network access.
+            //Thread.sleep(2000);
+
+            if (login_successful) {
+                db.renewRefs(lName, lpass);
+                db.getRefElements(TABLE_CARS);
+                // get docs
+                if (deviceId != null) {
+                    db.sendAllMessages(deviceId);
+                    db.clearDocs();
+                    getDocs(deviceId);
+                }
+            }
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            mAuthTask = null;
+            showProgress(false);
+            finishUpadte();
+//            } else {
+//                mPasswordView.setError(getString(R.string.error_incorrect_password));
+//                mPasswordView.requestFocus();
+//            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            mAuthTask = null;
+            showProgress(false);
+        }
+    }
+
 
 }
 

@@ -66,7 +66,16 @@
 
     <include
         android:id="@+id/include"
-        layout="@layout/content_main" />
+        layout="@layout/content_main"
+        android:visibility="visible" />
+
+    <ProgressBar
+        android:id="@+id/login_progress2"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="250dp"
+        android:visibility="visible" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
@@ -79,9 +88,9 @@
 
     <TextView
         android:id="@+id/tvNoData2"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="180dp"
+        android:layout_marginLeft="150dp"
         android:layout_marginTop="300dp"
         android:text="@string/NoData" />
 

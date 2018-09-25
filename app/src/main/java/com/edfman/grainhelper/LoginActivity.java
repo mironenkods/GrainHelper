@@ -316,7 +316,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 // Simulate network access.
                 //Thread.sleep(2000);
 
-                request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/main/login?login=" + mEmail + "&password=" + mPassword + "");
+                request = new HTTPWorking().callWebService(server_Ip + "/agro/hs/Grain/main/login?login=" + mEmail + "&password=" + mPassword + "");
 
             if (request!=null && request.code == 200){
                 login_suc = true;
@@ -345,10 +345,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 toast_text = "Ошибка связи";
             } else{
                 switch (request.code){
-                    case 200: toast_text = "ОК";
-                    case 401: toast_text = "Ошибка авторазации";
-                    case 500: toast_text = "Внутреняя ошибка сервера";
-                    default: toast_text = "Ошибка";
+                    case 200: toast_text = "ОК"; break;
+                    case 401: toast_text = "Ошибка авторазации"; break;
+                    case 500: toast_text = "Внутреняя ошибка сервера"; break;
+                    default: toast_text = "Ошибка"; break;
                 }
             }
 

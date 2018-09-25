@@ -302,11 +302,16 @@ class DatabaseHandler extends SQLiteOpenHelper {
         if(table_name==TABLE_DRIVERS){
             selectQuery = "SELECT  * FROM " + table_name + " WHERE " + table_name + ".title LIKE ?";
         } else {
-            selectQuery = "SELECT  * FROM " + table_name + " WHERE " + table_name + ".id=?";
+            selectQuery = "SELECT  * FROM " + table_name + " WHERE " + table_name + ".id_1c=?";
+        }
+        Cursor cursor = null;
+        SQLiteDatabase db = this.getReadableDatabase();
+        if(table_name==TABLE_DRIVERS){
+            cursor = db.rawQuery(selectQuery, new String[]{"%" + id + "%"});
+        } else {
+            cursor = db.rawQuery(selectQuery, new String[]{id});
         }
 
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, new String[]{"%" + id + "%"});
         RefType curr_type = RefType.car;
         if(table_name==TABLE_CARS) curr_type = RefType.car;
         if(table_name==TABLE_CROPS) curr_type = RefType.crop;
@@ -447,7 +452,7 @@ class DatabaseHandler extends SQLiteOpenHelper {
             Gson gson = new Gson();
             String body = gson.toJson(docsResult);
 
-            HTTPWorking.request_answer request = new HTTPWorking().callWebServicePost(server_Ip + "/agro_ves/hs/Grain/main/post?&emei=" + deviceId + "", body);
+            HTTPWorking.request_answer request = new HTTPWorking().callWebServicePost(server_Ip + "/agro/hs/Grain/main/post?&emei=" + deviceId + "", body);
             if (request!= null && request.code == 200) {
                 clearMessages();
                 MainActivity.lastSync_docs = System.currentTimeMillis()/1000  + 2 * 60 * 60;
@@ -460,7 +465,7 @@ class DatabaseHandler extends SQLiteOpenHelper {
 
         SQLiteDatabase db = this.getWritableDatabase();
 
-        HTTPWorking.request_answer request = new HTTPWorking().callWebService(server_Ip + "/agro_ves/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "");
+        HTTPWorking.request_answer request = new HTTPWorking().callWebService(server_Ip + "/agro/hs/Grain/ref/GetRef?login=" + lName + "&password=" + lpass + "");
         if (request.code == 200) {
             //clear all ref tables
             clearAllRefs();

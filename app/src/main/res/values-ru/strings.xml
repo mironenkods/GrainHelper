@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GrainHelper</string>
+    <string name="prompt_email">Эл. почта</string>
+    <string name="prompt_password">Пароль</string>
+    <string name="action_sign_in">Войти или зарегистрироваться</string>
+    <string name="action_sign_in_short">Войти</string>
+    <string name="error_invalid_email">Не правильный эл. адрес</string>
+    <string name="error_invalid_password">Пароль слишком короткий</string>
+    <string name="error_incorrect_password">Не верный пароль</string>
+    <string name="error_field_required">Поле должно быть заполнено</string>
+    <string name="Login">Логин</string>
+    <string name="title_activity_main">Основной</string>
+    <string name="title_activity_item">Накладные</string>
+    <string name="rCar">Машина</string>
+    <string name="rId">Ид</string>
+    <string name="rDate">Дата</string>
+    <string name="rDriver">Водитель</string>
+    <string name="rField">Поле</string>
+    <string name="rCrop">Культура</string>
+    <string name="rWarehouse">Склад</string>
+    <string name="rCreated">Создан</string>
+    <string name="rInvoice">Накладная</string>
+    <string name="title_activity_main2">Активность2</string>
+    <string name="title_activity_nav_drawer">НавАктивность</string>
+    <string name="navigation_drawer_open">Открыть нав</string>
+    <string name="navigation_drawer_close">Закрыть нав</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">Android Studio</string>
+    <string name="action_settings">Настройки</string>
+    <string name="sync_center">Центр синхронизации</string>
+    <string name="about">О программе</string>
+    <string name="sync_centr">Центр синхронизации</string>
+    <string name="NotRigData">Не верный формат данных</string>
+    <string name="DriverNotFound">Водитель не найден</string>
+    <string name="CarNotFound">Машина не найдена</string>
+    <string name="DocsLastSync">Синхронизация документов</string>
+    <string name="RefLastSync">Синхронизация справочников</string>
+    <string name="NoData">Нет данных</string>
+    <string name="nav_header_desc">Android Studio</string>
+    <string name="permission_rationale">Разрешение на просмотр контактов</string>
+</resources>
