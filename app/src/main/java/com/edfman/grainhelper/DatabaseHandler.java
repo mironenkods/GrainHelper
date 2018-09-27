@@ -321,7 +321,7 @@ class DatabaseHandler extends SQLiteOpenHelper {
         TypicalRef ref = null;
         if (cursor.moveToFirst()) {
 
-            if(table_name==TABLE_DRIVERS){
+            if(table_name!=TABLE_DRIVERS){
                 ref = new TypicalRef(
                         cursor.getString(1),
                         cursor.getString(2),

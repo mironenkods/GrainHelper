@@ -267,7 +267,7 @@ public class ItemActivity extends AppCompatActivity {
 
         });
 
-        parseContent("1/000000026/000000027/BAH 939068");
+//        parseContent("1/000000026/000000027/BAH 939068");
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 
