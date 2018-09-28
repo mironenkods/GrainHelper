@@ -329,9 +329,9 @@ class DatabaseHandler extends SQLiteOpenHelper {
                         curr_type);
             } else {
                 ref = new TypicalRef(
-                        cursor.getString(1),
+                        "",
                         cursor.getString(2),
-                        cursor.getString(3),
+                        "",
                         curr_type);
             }
 
